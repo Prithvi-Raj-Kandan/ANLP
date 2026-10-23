@@ -1,0 +1,49 @@
+import cv2
+import numpy as np
+import matplotlib.pyplot as plt
+
+img = cv2.imread("download.jpeg")
+
+# Check if image was loaded successfully
+if img is None:
+    print("Error: Could not load image. Make sure 'download.jpeg' exists.")
+else:
+    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
+
+    rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+    rgb = rgb / 255.0
+
+    # CMYK calculation is more complex and approximate, can lead to issues with division by zero or negative values.
+    # For robust CMYK conversion, specific libraries or color space transformations are often needed.
+    # This simplified version might produce warnings or unexpected results for some images/pixels.
+    k = 1 - np.max(rgb, axis=2)
+    # Add a small epsilon to avoid division by zero
+    k_safe = np.where(k == 1, 1 + 1e-10, k) # Prevent division by zero if k is exactly 1
+    c = (1 - rgb[:,:,0] - k) / (1 - k_safe)
+    m = (1 - rgb[:,:,1] - k) / (1 - k_safe)
+    y = (1 - rgb[:,:,2] - k) / (1 - k_safe)
+
+    # Clip values to [0, 1] range after calculation for CMY channels
+    cmy = np.dstack((np.clip(c, 0, 1), np.clip(m, 0, 1), np.clip(y, 0, 1)))
+
+    plt.figure(figsize=(10, 10)) # Increased figure size for 2x2 grid
+
+    plt.subplot(221)
+    plt.imshow(gray, cmap="gray")
+    plt.title("Gray")
+
+    plt.subplot(222)
+    plt.imshow(hsv)
+    plt.title("HSV")
+
+    plt.subplot(223)
+    plt.imshow(cmy)
+    plt.title("CMY")
+
+    plt.subplot(224)
+    plt.imshow(rgb)
+    plt.title("RGB")
+
+    plt.tight_layout() # Adjust layout to prevent overlaps
+    plt.show()
